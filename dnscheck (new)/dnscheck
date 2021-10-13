@@ -16,42 +16,41 @@
 #           NOTE:
 
 Report() {
-	##Alert to user at TTY
-	[[ "$NOTTY" -ne "y" ]] && { echo -e "$(date) Bad!"; echo -e $($RESULTS); };
+  ##Alert to user at TTY
+  [[ "$NOTTY" -ne "y" ]] && { echo -e "$(date) Bad!"; echo -e $($RESULTS); };
 
-	##Email alert
-	[[ "$REPORT_ADDRESS" == "" ]] || { echo -e "From: dnsreport@proofpoint.com\nTo: $REPORT_ADDRESS\nSubject: Host not found $TARGET\nMissing $RETURN\n\n$RESULTS\n.\n" > /tmp/email.eml;sendmail -f$REPORT_ADDRESS $REPORT_ADDRESS < /tmp/email.eml; rm /tmp/email.eml; };
+  ##Email alert
+  [[ "$REPORT_ADDRESS" == "" ]] || { echo -e "From: dnsreport@proofpoint.com\nTo: $REPORT_ADDRESS\nSubject: Host not found $TARGET\nMissing $RETURN\n\n$RESULTS\n.\n" > /tmp/email.eml;sendmail -f$REPORT_ADDRESS $REPORT_ADDRESS < /tmp/email.eml; rm /tmp/email.eml; };
 
-	##Log Failure
-	echo -e "$(date) Bad!" >> /tmp/dns_check_$SERVER.log; echo -e "Missing $RETURN" >> /tmp/dns_check_$SERVER.log; echo -e $($RESULTS) >> /tmp/dns_check_$SERVER.log; echo -e "\n" >> /tmp/dns_check_$SERVER.log;
+  ##Log Failure
+  echo -e "$(date) Bad!" >> /tmp/dns_check_$SERVER.log; echo -e "Missing $RETURN" >> /tmp/dns_check_$SERVER.log; echo -e $($RESULTS) >> /tmp/dns_check_$SERVER.log; echo -e "\n" >> /tmp/dns_check_$SERVER.log;
 };
 
 Check() {
-	#TTY Checking output
-	[[ "$NOTTY" -ne "y"]] && { echo "$(date) Checking"; };
-	echo "$(date) Checking" >> /tmp/dns_check_$SERVER.log;
-	RESULTS=$(dig $TYPE $TARGET @$SERVER +trace);
-	echo -e $GOOD_RECORD | while read A_RECORD;
-		do
-			GOOD="";
-			GOOD=$(echo $RESULTS | grep $GOOD_RECORD);
-			[[ "$GOOD" == "" ]] && Report;
-		done;
+  #TTY Checking output
+  [[ "$NOTTY" -ne "y"]] && { echo "$(date) Checking"; };
+  echo "$(date) Checking" >> /tmp/dns_check_$SERVER.log;
+  RESULTS=$(dig $TYPE $TARGET @$SERVER +trace);
+  echo -e $GOOD_RECORD | while read A_RECORD;
+    do
+      GOOD="";
+      GOOD=$(echo $RESULTS | grep $GOOD_RECORD);
+      [[ "$GOOD" == "" ]] && Report;
+    done;
 };
-
 
 ##PLACEHOLDER FOR THIS FUNCTION
 CheckRemote() {
-	#TTY Checking output
-	[[ "$NOTTY" -ne "y"]] && { echo "$(date) Checking @$REMOTESERVER"; };
-	echo "$(date) Checking @$REMOTESERVER" >> /tmp/dns_check_$SERVER.log;
-	RESULTS=$(dig $TYPE $TARGET @$REMOTESERVER +trace);
-		for RETURN in $(echo -e $GOOD_RECORD);
-			do
-				GOOD="";
-				GOOD=$(echo $RETURN | grep $GOOD_RECORD);
-				[[ "$GOOD" == "" ]] && Report;
-			done;
+  #TTY Checking output
+  [[ "$NOTTY" -ne "y"]] && { echo "$(date) Checking @$REMOTESERVER"; };
+  echo "$(date) Checking @$REMOTESERVER" >> /tmp/dns_check_$SERVER.log;
+  RESULTS=$(dig $TYPE $TARGET @$REMOTESERVER +trace);
+    for RETURN in $(echo -e $GOOD_RECORD);
+      do
+        GOOD="";
+        GOOD=$(echo $RETURN | grep $GOOD_RECORD);
+        [[ "$GOOD" == "" ]] && Report;
+      done;
 };
 
 GoodRecord() {
@@ -61,33 +60,25 @@ GoodRecord() {
 
 #Help
 helps() {
-	echo -e "To come";
+  echo -e "To come";
 };
 
 ## Arguments
-OPTS=$(getopt -o hrsletid --long "help,report,server,remote,target,type,daemonize,interval,notty"  -- "$@")
+OPTS=$(getopt -o hrsletidn --long "help,report,server,remote,target,type,daemonize,interval,notty" -- "$@")
 eval set -- "$OPTS"
 while true
   do
     case "$1" in
-	-h) helps; shift;;
-	-r) REPORT_ADDRESS=$2; shift 2;;
-	-s) SERVER=$2; shift 2;;
-	-l) REMOTESERVER=$2; shift 2;;
-	-e) TARGET=$2; shift 2;;
-	-t) TYPE=$2; shift 2;;
-	-i) INTERVAL=$2; shift 2;;
-	-d) DAEMONIZE=y; shift;;
-	--help) helps; shift;;
-	--report) REPORT_ADDRESS=$2; shift 2;;
-	--server) SERVER=$2; shift 2;;
-	--remote) REMOTESERVER=$2; shift 2;;
-	--target) TARGET=$2; shift 2;;
-	--type) TYPE=$2; shift;;
-	--interval) INTERVAL=$2; shift 2;;
-	--daemonize) DAEMONIZE=y; shift;;
-	--notty) NOTTY=y; shift;;
-	--) shift; break;;
+      -h | --help) helps; shift;;
+      -r | --report) REPORT_ADDRESS=$2; shift 2;;
+      -s | --server) SERVER=$2; shift 2;;
+      -l | --remote) REMOTESERVER=$2; shift 2;;
+      -e | --target) TARGET=$2; shift 2;;
+      -t | --type) TYPE=$2; shift 2;;
+      -i | --interval) INTERVAL=$2; shift 2;;
+      -d | --daemonize) DAEMONIZE=y; shift;;
+      -n | --notty) NOTTY=y; shift;;
+      --) shift; break;;
     esac
 done
 
@@ -95,23 +86,23 @@ done
 
 rm /tmp/email.eml 2>/dev/null
 [[ "$DAEMONIZE" == "y" ]] && {
-	optstr=""
-	[[ "$REPORT_ADDRESS" -ne "" ]] && optstr="--report $REPORT_ADDRESS $optstr"
-	[[ "$SERVER" -ne "" ]] && optstr="--server @$SERVER $optstr"
-	[[ "$TARGET" -ne "" ]] && optstr="--target @$TARGET $optstr"
-	[[ "$TYPE" -ne "" ]] th&&en optstr="--type $TYPE $optstr"
-	[[ "$REMOTESERVER" -ne "" ]] && optstr="--remote @$REMOTESERVER $optstr"	
-	[[ "$INTERVAL" -ne "" ]] && optstr="--interval $INTERVAL $optstr"
-	nohup "./dns_check $optstr --notty" &
-	echo -e "dns_check is daemonized on PID $(ps aux|grep dns_check|grep -v grep|awk {'print $2'})\n"
-	exit 0; 
-		} || { 
-	GoodRecord;
-	while true;
-		do 
-			Check
-			[[ "$INTERVAL" == "" || "$INTERVAL" < "15" ]] && sleep 15 || sleep $INTERVAL
-		done;
+  optstr=""
+  [[ "$REPORT_ADDRESS" -ne "" ]] && optstr="--report $REPORT_ADDRESS $optstr"
+  [[ "$SERVER" -ne "" ]] && optstr="--server @$SERVER $optstr"
+  [[ "$TARGET" -ne "" ]] && optstr="--target @$TARGET $optstr"
+  [[ "$TYPE" -ne "" ]] && optstr="--type $TYPE $optstr"
+  [[ "$REMOTESERVER" -ne "" ]] && optstr="--remote @$REMOTESERVER $optstr"	
+  [[ "$INTERVAL" -ne "" ]] && optstr="--interval $INTERVAL $optstr"
+  nohup "./dns_check $optstr --notty" &
+  echo -e "dns_check is daemonized on PID $(ps aux|grep dns_check|grep -v grep|awk {'print $2'})\n"
+  exit 0; 
+    } || { 
+  GoodRecord;
+  while true;
+    do 
+      Check
+      [[ "$INTERVAL" == "" || "$INTERVAL" < "15" ]] && sleep 15 || sleep $INTERVAL
+    done;
 };
 
 exit 0
