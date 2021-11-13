@@ -30,10 +30,7 @@ Report() {
   }
 
   ##Log Failure
-  echo -e "$(date) Bad!" >>/tmp/dns_check_"$SERVER".log
-  echo -e "Missing $RETURN" >>/tmp/dns_check_"$SERVER".log
-  echo -e "$RESULTS" >>/tmp/dns_check_"$SERVER".log
-  echo -e "\n" >>/tmp/dns_check_"$SERVER".log
+  echo -e "$(date) Bad!\nMissing $RETURN\n$RESULTS\n" >>/tmp/dns_check_"$SERVER".log
 }
 
 Check() {
@@ -50,7 +47,6 @@ Check() {
   done
 }
 
-##PLACEHOLDER FOR THIS FUNCTION
 CheckRemote() {
   #TTY Checking output
   [[ "$NOTTY" != 'y' ]] && {
@@ -59,7 +55,7 @@ CheckRemote() {
   echo "$(date) Checking @""$REMOTESERVER" >>/tmp/dns_check_"$SERVER".log
   RESULTS=$(dig "$TYPE" "$TARGET" @"$REMOTESERVER" +trace)
   for RETURN in $(echo -e "$GOOD_RECORD"); do
-    GOOD=""
+    unset GOOD
     GOOD=$(echo "$RETURN" | grep "$GOOD_RECORD")
     [[ "$GOOD" == "" ]] && Report
   done
@@ -135,7 +131,7 @@ rm /tmp/email.eml 2>/dev/null
   [[ "$REMOTESERVER" -ne "" ]] && optstr="--remote @$REMOTESERVER $optstr"
   [[ "$INTERVAL" -ne "" ]] && optstr="--interval $INTERVAL $optstr"
   nohup "./dns_check $optstr --notty" &
-  echo -en "dns_check is daemonized on PID ""$(ps aux | grep dns_check | grep -v grep | awk '{print $2}')""\n"
+  echo -en "dns_check is daemonized on PID ""$(pgrep dns_check)""\n"
   exit 0
 } || {
   GoodRecord
